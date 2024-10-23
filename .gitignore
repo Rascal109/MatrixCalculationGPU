@@ -1,0 +1,9 @@
+MatrixCa.24923e1c/
+x64/
+.vs/
+Debug/
+Release/
+*.obj
+*.exe
+*.dll
+*.pdb
