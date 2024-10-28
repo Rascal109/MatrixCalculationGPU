@@ -6,7 +6,8 @@ Matrix::Matrix() {
 
 Matrix::~Matrix() {};
 
-uint32_t Matrix::findMemoryType(vk::PhysicalDevice physicalDevice, uint32_t typeFilter, vk::MemoryPropertyFlags property) {
+uint32_t Matrix::findMemoryType(vk::PhysicalDevice physicalDevice, uint32_t typeFilter, vk::MemoryPropertyFlags property) 
+{
 	vk::PhysicalDeviceMemoryProperties memoryProperties = physicalDevice.getMemoryProperties();
 	for (uint32_t i = 0; i < memoryProperties.memoryTypeCount; ++i) {
 		if (memoryProperties.memoryTypes[i].propertyFlags & property) {
@@ -66,7 +67,8 @@ vk::UniqueCommandBuffer Matrix::makeCopyCommandBuffer(const vk::Device device, v
 	return std::move(commandBuffer);
 }
 
-std::vector<char> Matrix::readFile(const std::string& filename) {
+std::vector<char> Matrix::readFile(const std::string& filename) 
+{
 	std::ifstream file(filename, std::ios::binary | std::ios::ate);
 	if (!file.is_open()) {
 		throw std::runtime_error("failed to open spv file.");
@@ -81,7 +83,8 @@ std::vector<char> Matrix::readFile(const std::string& filename) {
 	return buffer;
 }
 
-vk::UniqueShaderModule Matrix::createShaderModule(const vk::Device device, const std::vector<char>& code) {
+vk::UniqueShaderModule Matrix::createShaderModule(const vk::Device device, const std::vector<char>& code) 
+{
 	vk::ShaderModuleCreateInfo shaderInfo = {};
 	shaderInfo.codeSize = code.size();
 	shaderInfo.pCode = reinterpret_cast<const uint32_t*> (code.data());
@@ -261,7 +264,7 @@ std::vector<std::vector<float>> Matrix::multi(const std::vector<std::vector<floa
 	// デスクリプタプールの作成.
 	vk::DescriptorPoolSize descPoolSize = {};
 	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
-	descPoolSize.descriptorCount = 3; // デスクリプタに結び付けるバッファの数.
+	descPoolSize.descriptorCount = 3; // 結び付けられるでスクリプタの最大数.
 
 	vk::DescriptorPoolCreateInfo descPoolInfo = {};
 	descPoolInfo.poolSizeCount = 1;
@@ -537,7 +540,7 @@ std::vector<std::vector<float>> Matrix::multiEach(const std::vector<std::vector<
 	// デスクリプタプールの作成.
 	vk::DescriptorPoolSize descPoolSize = {};
 	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
-	descPoolSize.descriptorCount = 3; // デスクリプタに結び付けるバッファの数.
+	descPoolSize.descriptorCount = 3; // 結び付けられるでスクリプタの最大数.
 
 	vk::DescriptorPoolCreateInfo descPoolInfo = {};
 	descPoolInfo.poolSizeCount = 1;
@@ -807,7 +810,7 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 	// デスクリプタプールの作成.
 	vk::DescriptorPoolSize descPoolSize = {};
 	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
-	descPoolSize.descriptorCount = 3; // デスクリプタに結び付けるバッファの数.
+	descPoolSize.descriptorCount = 3; // 結び付けられるでスクリプタの最大数.
 
 	vk::DescriptorPoolCreateInfo descPoolInfo = {};
 	descPoolInfo.poolSizeCount = 1;
@@ -1043,7 +1046,7 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 	// デスクリプタプールの作成.
 	vk::DescriptorPoolSize descPoolSize = {};
 	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
-	descPoolSize.descriptorCount = 2; // デスクリプタに結び付けるバッファの数.
+	descPoolSize.descriptorCount = 2; // 結び付けられるでスクリプタの最大数.
 
 	vk::DescriptorPoolCreateInfo descPoolInfo = {};
 	descPoolInfo.poolSizeCount = 1;
@@ -1298,7 +1301,7 @@ std::vector<std::vector<float>> Matrix::diff(const std::vector<std::vector<float
 	// デスクリプタプールの作成.
 	vk::DescriptorPoolSize descPoolSize = {};
 	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
-	descPoolSize.descriptorCount = 3; // デスクリプタに結び付けるバッファの数.
+	descPoolSize.descriptorCount = 3; // 結び付けられるでスクリプタの最大数.
 
 	vk::DescriptorPoolCreateInfo descPoolInfo = {};
 	descPoolInfo.poolSizeCount = 1;
