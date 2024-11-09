@@ -146,6 +146,11 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <None Include="compile.bat" />
+    <None Include="matConstantSum.comp" />
+    <None Include="matDiff.comp" />
+    <None Include="matMultiple.comp" />
+    <None Include="matMutipleEach.comp" />
+    <None Include="matSum.comp" />
     <None Include="src\matConstantSum.spv" />
     <None Include="src\matDiff.spv" />
     <None Include="src\matMultiple.spv" />
