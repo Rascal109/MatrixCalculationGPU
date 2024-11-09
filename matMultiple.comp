@@ -31,7 +31,6 @@ void main() {
     float sum = 0.0f;
 
     for (uint i = 0; i < (constants.WIDTH_A + 15) / 16; ++i) {
-        // Load data into shared memory
         uint row = gl_LocalInvocationID.y;
         uint col = gl_LocalInvocationID.x;
         
