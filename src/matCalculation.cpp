@@ -1573,7 +1573,7 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::ve
 	m_queue.submit(submitInfo);
 
 	// シェーダモジュールの設定. 修正必要.
-	std::vector<char> code = readFile("matComplexMultiple.spv");
+	std::vector<char> code = readFile("src/matComplexMultiple.spv");
 	vk::UniqueShaderModule computeShaderModule = createShaderModule(m_device.get(), code);
 
 	// デスクリプタプールの作成.
@@ -1755,6 +1755,281 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::ve
 	for (int i = 0; i < heightA; ++i) {
 		for (int j = 0; j < widthB; ++j) {
 			long component = i * widthB + j;
+			ans[i][j] = { dataC[component * 2], dataC[component * 2 + 1] };
+		}
+	}
+
+	return ans;
+}
+
+
+std::vector<std::vector<std::complex<float>>> Matrix::complexSum(const std::vector<std::vector<std::complex<float>>>& matA, const std::vector<std::vector<std::complex<float>>>& matB) {
+	if (matA.empty() || matB.empty()) {
+		throw std::runtime_error("matrix is empty.");
+		abort();
+	}
+
+	int heightA = (int)(matA.size());
+	int widthA = (int)(matA[0].size());
+	int heightB = (int)(matB.size());
+	int widthB = (int)(matB[0].size());
+
+	if ((widthA != widthB) || (heightA != heightB)) {
+		throw std::runtime_error("don't match matrix size for calculation.");
+		abort();
+	}
+
+	int width = widthA;
+	int height = heightA;
+
+	// バッファの作成.
+	std::vector<std::vector<std::complex<float>>> ans(height, std::vector<std::complex<float>>(width));
+
+	std::vector<float> dataA;
+	std::vector<float> dataB;
+	std::vector<float> dataC(width * height * 2);
+
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j) {
+			dataA.emplace_back(matA[i][j].real());
+			dataA.emplace_back(matA[i][j].imag());
+			dataB.emplace_back(matB[i][j].real());
+			dataB.emplace_back(matB[i][j].imag());
+		}
+	}
+
+	vk::DeviceSize bufferSizeInA = sizeof(float) * width * height * 2;
+	vk::DeviceSize bufferSizeInB = sizeof(float) * width * height * 2;
+	vk::DeviceSize bufferSizeOut = sizeof(float) * height * width * 2;
+
+	vk::UniqueDeviceMemory stagingBufferMemoryA, stagingBufferMemoryB, stagingBufferMemoryC, bufferAMemory, bufferBMemory, bufferCMemory;
+
+	vk::UniqueBuffer stagingBufferA = createBuffer(m_device.get(), m_physicalDevice, bufferSizeInA,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBufferMemoryA);
+
+	vk::UniqueBuffer stagingBufferB = createBuffer(m_device.get(), m_physicalDevice, bufferSizeInB,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBufferMemoryB);
+
+	vk::UniqueBuffer stagingBufferC = createBuffer(m_device.get(), m_physicalDevice, bufferSizeOut,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eHostVisible | vk::MemoryPropertyFlagBits::eHostCoherent, stagingBufferMemoryC);
+
+	vk::UniqueBuffer bufferA = createBuffer(m_device.get(), m_physicalDevice, bufferSizeInA,
+		vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, bufferAMemory);
+
+	vk::UniqueBuffer bufferB = createBuffer(m_device.get(), m_physicalDevice, bufferSizeInB,
+		vk::BufferUsageFlagBits::eStorageBuffer | vk::BufferUsageFlagBits::eTransferDst,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, bufferBMemory);
+
+	vk::UniqueBuffer bufferC = createBuffer(m_device.get(), m_physicalDevice, bufferSizeOut,
+		vk::BufferUsageFlagBits::eTransferSrc | vk::BufferUsageFlagBits::eTransferDst | vk::BufferUsageFlagBits::eStorageBuffer,
+		vk::MemoryPropertyFlagBits::eDeviceLocal, bufferCMemory);
+
+	// コマンドバッファの作成.
+	void* data;
+	data = m_device->mapMemory(stagingBufferMemoryA.get(), 0, bufferSizeInA);
+	std::memcpy(data, dataA.data(), bufferSizeInA);
+	vk::UniqueCommandBuffer commandBufferA = makeCopyCommandBuffer(m_device.get(), m_commandPool.get(),
+		stagingBufferA.get(), bufferA.get(), bufferSizeInA, vk::CommandBufferLevel::ePrimary);
+	m_device->unmapMemory(stagingBufferMemoryA.get());
+
+	data = m_device->mapMemory(stagingBufferMemoryB.get(), 0, bufferSizeInB);
+	std::memcpy(data, dataB.data(), bufferSizeInB);
+	vk::UniqueCommandBuffer commandBufferB = makeCopyCommandBuffer(m_device.get(), m_commandPool.get(),
+		stagingBufferB.get(), bufferB.get(), bufferSizeInB, vk::CommandBufferLevel::ePrimary);
+	m_device->unmapMemory(stagingBufferMemoryB.get());
+
+	std::vector<vk::CommandBuffer> commandBuffers = { commandBufferA.get(), commandBufferB.get() };
+
+	// キューに流して実行.
+	vk::SubmitInfo submitInfo = {};
+	submitInfo.commandBufferCount = static_cast<uint32_t> (commandBuffers.size());
+	submitInfo.pCommandBuffers = commandBuffers.data();
+	submitInfo.signalSemaphoreCount = 1;
+	submitInfo.setPSignalSemaphores(&m_semaphore.get());
+	m_queue.submit(submitInfo);
+
+	// シェーダモジュールの設定. 修正必要.
+	std::vector<char> code = readFile("src/matComplexSum.spv");
+	vk::UniqueShaderModule computeShaderModule = createShaderModule(m_device.get(), code);
+
+	// デスクリプタプールの作成.
+	vk::DescriptorPoolSize descPoolSize = {};
+	descPoolSize.type = vk::DescriptorType::eStorageBuffer;
+	descPoolSize.descriptorCount = 3; // 結び付けられるでスクリプタの最大数.
+
+	vk::DescriptorPoolCreateInfo descPoolInfo = {};
+	descPoolInfo.poolSizeCount = 1;
+	descPoolInfo.pPoolSizes = &descPoolSize;
+	descPoolInfo.maxSets = 1;
+	descPoolInfo.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet;
+	vk::UniqueDescriptorPool descPool = m_device->createDescriptorPoolUnique(descPoolInfo);
+
+	// デスクリプタセットレイアウトの作成.
+	std::vector<vk::DescriptorSetLayoutBinding> descSetLayoutBinding(3);
+	descSetLayoutBinding[0].binding = 0;
+	descSetLayoutBinding[0].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descSetLayoutBinding[0].descriptorCount = 1;
+	descSetLayoutBinding[0].stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	descSetLayoutBinding[1].binding = 1;
+	descSetLayoutBinding[1].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descSetLayoutBinding[1].descriptorCount = 1;
+	descSetLayoutBinding[1].stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	descSetLayoutBinding[2].binding = 2;
+	descSetLayoutBinding[2].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descSetLayoutBinding[2].descriptorCount = 1;
+	descSetLayoutBinding[2].stageFlags = vk::ShaderStageFlagBits::eCompute;
+
+	vk::DescriptorSetLayoutCreateInfo descSetLayoutInfo = {};
+	descSetLayoutInfo.bindingCount = static_cast<uint32_t> (descSetLayoutBinding.size());
+	descSetLayoutInfo.pBindings = descSetLayoutBinding.data();
+	vk::UniqueDescriptorSetLayout descSetLayout = m_device->createDescriptorSetLayoutUnique(descSetLayoutInfo);
+
+	// デスクリプタセットの作成.
+	vk::DescriptorSetAllocateInfo descSetInfo = {};
+	descSetInfo.descriptorPool = descPool.get();
+	descSetInfo.descriptorSetCount = 1;
+	descSetInfo.pSetLayouts = &descSetLayout.get();
+
+	vk::UniqueDescriptorSet descSet = std::move(m_device->allocateDescriptorSetsUnique(descSetInfo)[0]);
+
+	// コンピュートパイプラインの作成.
+	vk::PushConstantRange pushConstantRange = {};
+	pushConstantRange.stageFlags = vk::ShaderStageFlagBits::eCompute;
+	pushConstantRange.offset = 0;
+	pushConstantRange.size = sizeof(int) * 2;
+
+	vk::PipelineLayoutCreateInfo pipelineLayoutInfo = {};
+	pipelineLayoutInfo.setLayoutCount = 1;
+	pipelineLayoutInfo.pSetLayouts = &descSetLayout.get();
+	pipelineLayoutInfo.pushConstantRangeCount = 1;
+	pipelineLayoutInfo.pPushConstantRanges = &pushConstantRange;
+
+	vk::UniquePipelineLayout pipelineLayout = m_device->createPipelineLayoutUnique(pipelineLayoutInfo);
+
+	vk::ComputePipelineCreateInfo pipelineInfo = {};
+	pipelineInfo.stage.sType = vk::StructureType::ePipelineShaderStageCreateInfo;
+	pipelineInfo.stage.stage = vk::ShaderStageFlagBits::eCompute;
+	pipelineInfo.stage.module = computeShaderModule.get();
+	pipelineInfo.stage.pName = "main";
+	pipelineInfo.layout = pipelineLayout.get();
+
+	vk::UniquePipelineCache pipelineCache = m_device->createPipelineCacheUnique(vk::PipelineCacheCreateInfo());
+
+	auto wrapped = m_device->createComputePipelinesUnique(pipelineCache.get(), pipelineInfo);
+	vk::UniquePipeline computePipeline = std::move(wrapped.value[0]);
+
+	// デスクリプタにbind.
+	vk::DescriptorBufferInfo bufferInfoA = {};
+	bufferInfoA.buffer = bufferA.get();
+	bufferInfoA.offset = 0;
+	bufferInfoA.range = bufferSizeInA;
+
+	vk::DescriptorBufferInfo bufferInfoB = {};
+	bufferInfoB.buffer = bufferB.get();
+	bufferInfoB.offset = 0;
+	bufferInfoB.range = bufferSizeInB;
+
+	vk::DescriptorBufferInfo bufferInfoC = {};
+	bufferInfoC.buffer = bufferC.get();
+	bufferInfoC.offset = 0;
+	bufferInfoC.range = bufferSizeOut;
+
+	std::vector<vk::WriteDescriptorSet> descWrites(3);
+	descWrites[0].dstSet = descSet.get();
+	descWrites[0].dstBinding = 0;
+	descWrites[0].dstArrayElement = 0;
+	descWrites[0].descriptorCount = 1;
+	descWrites[0].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descWrites[0].pBufferInfo = &bufferInfoA;
+
+
+	descWrites[1].dstSet = descSet.get();
+	descWrites[1].dstBinding = 1;
+	descWrites[1].dstArrayElement = 0;
+	descWrites[1].descriptorCount = 1;
+	descWrites[1].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descWrites[1].pBufferInfo = &bufferInfoB;
+
+	descWrites[2].dstSet = descSet.get();
+	descWrites[2].dstBinding = 2;
+	descWrites[2].dstArrayElement = 0;
+	descWrites[2].descriptorCount = 1;
+	descWrites[2].descriptorType = vk::DescriptorType::eStorageBuffer;
+	descWrites[2].pBufferInfo = &bufferInfoC;
+
+	m_device->updateDescriptorSets(descWrites, nullptr);
+
+	vk::CommandBufferAllocateInfo cmdAllocateInfo = {};
+	cmdAllocateInfo.level = vk::CommandBufferLevel::ePrimary;
+	cmdAllocateInfo.commandPool = m_commandPool.get();
+	cmdAllocateInfo.commandBufferCount = 1;
+
+	vk::UniqueCommandBuffer calcCommandBuffer = std::move(m_device->allocateCommandBuffersUnique(cmdAllocateInfo)[0]);
+
+	vk::CommandBufferBeginInfo beginInfo = {};
+	beginInfo.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit;
+	calcCommandBuffer->begin(beginInfo);
+	calcCommandBuffer->bindPipeline(vk::PipelineBindPoint::eCompute, computePipeline.get());
+	calcCommandBuffer->bindDescriptorSets(vk::PipelineBindPoint::eCompute, pipelineLayout.get(), 0, descSet.get(), {});
+
+	// プッシュコンスタントの設定.
+	struct pushdata {
+		int width;
+		int height;
+	} constantValue;
+
+	constantValue.width = width;
+	constantValue.height = height;
+
+
+	calcCommandBuffer->pushConstants(pipelineLayout.get(), vk::ShaderStageFlagBits::eCompute, 0,
+		sizeof(constantValue), &constantValue);
+
+	calcCommandBuffer->dispatch((width + 15) / 16, (height + 15) / 16, 1);
+	calcCommandBuffer->end();
+
+	const vk::PipelineStageFlags stageCalc = vk::PipelineStageFlagBits::eComputeShader;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &calcCommandBuffer.get();
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.setPWaitSemaphores(&m_semaphore.get());
+	submitInfo.pWaitDstStageMask = &stageCalc;
+
+	m_queue.submit(submitInfo);
+
+	data = m_device->mapMemory(stagingBufferMemoryC.get(), 0, bufferSizeOut);
+	vk::UniqueCommandBuffer getCommandBuffer = makeCopyCommandBuffer(m_device.get(), m_commandPool.get(),
+		bufferC.get(), stagingBufferC.get(), bufferSizeOut, vk::CommandBufferLevel::ePrimary);
+
+	const vk::PipelineStageFlags stageTrans = vk::PipelineStageFlagBits::eTransfer;
+
+	submitInfo.commandBufferCount = 1;
+	submitInfo.pCommandBuffers = &getCommandBuffer.get();
+	submitInfo.waitSemaphoreCount = 1;
+	submitInfo.setPWaitSemaphores(&m_semaphore.get());
+	submitInfo.pWaitDstStageMask = &stageTrans;
+
+	m_queue.submit(submitInfo, m_fence.get());
+
+	const std::vector< vk::Fence > fences{ m_fence.get() };
+	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
+		abort();
+	}
+
+	memcpy(dataC.data(), data, bufferSizeOut);
+	m_device->unmapMemory(stagingBufferMemoryC.get());
+
+
+	for (int i = 0; i < height; ++i) {
+		for (int j = 0; j < width; ++j) {
+			long component = i * width + j;
 			ans[i][j] = { dataC[component * 2], dataC[component * 2 + 1] };
 		}
 	}

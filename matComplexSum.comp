@@ -1,0 +1,39 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+struct compValue {
+	float real;
+	float imag;
+};
+
+layout(set = 0, binding = 0) readonly buffer MatA {
+	compValue A[];
+};
+
+layout(set = 0, binding = 1) readonly buffer MatB {
+	compValue B[];
+};
+
+layout(set = 0, binding = 2) writeonly buffer MatC {
+	float C[];
+};
+
+layout(push_constant) uniform Constants {
+    int width;
+    int height;
+} constants;
+
+void main() {
+	uint row = gl_GlobalInvocationID.y;
+	uint col = gl_GlobalInvocationID.x;
+
+	if (row >= constants.height || col >= constants.width) {
+		return;
+	}
+
+	uint index = row * constants.width + col;
+
+	C[index * 2] = A[index].real + B[index].real;
+	C[index * 2 + 1] = A[index].imag + B[index].imag;
+}

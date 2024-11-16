@@ -147,6 +147,7 @@
   <ItemGroup>
     <None Include="compile.bat" />
     <None Include="matComplexMultiple.comp" />
+    <None Include="matComplexSum.comp" />
     <None Include="matConstantSum.comp" />
     <None Include="matDiff.comp" />
     <None Include="matMultiple.comp" />
