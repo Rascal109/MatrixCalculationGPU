@@ -33,6 +33,24 @@
     <None Include="src\matSum.spv">
       <Filter>ソース ファイル</Filter>
     </None>
+    <None Include="matConstantSum.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="matDiff.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="matMultiple.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="matMutipleEach.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="matSum.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
+    <None Include="matComplexMultiple.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">
