@@ -52,4 +52,6 @@ public:
 	std::vector<std::vector<float>> diff(const std::vector<std::vector<float>> &matA, const std::vector<std::vector<float>> &matB);
 
 	std::vector<std::vector<std::complex<float>>> complexMulti(const std::vector<std::vector<std::complex<float>>>& matA, const std::vector<std::vector<std::complex<float>>>& matB);
+
+	std::vector<std::vector<std::complex<float>>> complexSum(const std::vector<std::vector<std::complex<float>>>& matA, const std::vector<std::vector<std::complex<float>>>& matB);
 };

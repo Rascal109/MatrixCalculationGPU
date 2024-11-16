@@ -126,7 +126,7 @@ int main() {
 
 	Matrix calcInstance;
 	//std::vector<std::vector<float>> ans = calcInstance.multiple(hoge, fuga);
-	std::vector<std::vector<std::complex<float>>> ans = calcInstance.complexMulti(hoge, fuga);
+	std::vector<std::vector<std::complex<float>>> ans = calcInstance.complexSum(hoge, fuga);
 
 	for (int i = 0; i < 3; ++i) {
 		for (int j = 0; j < 3; ++j) {
