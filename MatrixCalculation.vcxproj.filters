@@ -48,6 +48,9 @@
     <None Include="matSum.comp">
       <Filter>ソース ファイル</Filter>
     </None>
+    <None Include="matComplexMultiple.comp">
+      <Filter>ソース ファイル</Filter>
+    </None>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\main.cpp">

@@ -1,0 +1,80 @@
+#version 450
+
+layout(local_size_x = 16, local_size_y = 16) in;
+
+struct compValue {
+    float real;
+    float imag;
+};
+
+layout(std430, set = 0, binding = 0) readonly buffer MatA {
+	compValue A[];
+};
+
+layout(std430, set = 0, binding = 1) readonly buffer MatB {
+	compValue B[];
+};
+
+layout(set = 0, binding = 2) writeonly buffer MatC {
+    float C[];
+};
+
+layout(push_constant) uniform Constants {
+    int WIDTH_A;
+    int HEIGHT_A;
+    int WIDTH_B;
+    int HEIGHT_B;
+} constants;
+
+shared float AsubReal[16][16];
+shared float AsubImag[16][16];
+shared float BsubReal[16][16];
+shared float BsubImag[16][16];
+
+void main() {
+    uint globalRow = gl_GlobalInvocationID.y;
+    uint globalCol = gl_GlobalInvocationID.x;
+
+    float realSum = 0.0f;
+    float imagSum = 0.0f;
+
+    for (uint i = 0; i < (constants.WIDTH_A + 15) / 16; ++i) {
+        uint row = gl_LocalInvocationID.y;
+        uint col = gl_LocalInvocationID.x;
+        
+        uint AIndex = (globalRow * constants.WIDTH_A) + (i * 16 + col);
+        uint BIndex = (i * 16 + row) * constants.WIDTH_B + globalCol;
+
+        if (globalRow < constants.HEIGHT_A && (i * 16 + col) < constants.WIDTH_A) {
+            AsubReal[row][col] = A[AIndex].real;
+            AsubImag[row][col] = A[AIndex].imag;
+        }
+        else {
+            AsubReal[row][col] = 0.0f;
+            AsubImag[row][col] = 0.0f;
+        }
+
+        if ((i * 16 + row) < constants.HEIGHT_B && globalCol < constants.WIDTH_B) {
+            BsubReal[row][col] = B[BIndex].real;
+            BsubImag[row][col] = B[BIndex].imag;
+        }
+        else {
+            BsubReal[row][col] = 0.0f;
+            BsubImag[row][col] = 0.0f;
+        }
+
+        barrier();
+
+        for (uint j = 0; j < 16; ++j) {
+            realSum += AsubReal[row][j] * BsubReal[j][col] - AsubImag[row][j] * BsubImag[j][col];
+            imagSum += AsubReal[row][j] * BsubImag[j][col] + AsubImag[row][j] * BsubReal[j][col];
+        }
+
+        barrier();
+    }
+
+    if (globalRow < constants.HEIGHT_A && globalCol < constants.WIDTH_B) {
+        C[(globalRow * constants.WIDTH_B + globalCol) * 2] = realSum;
+        C[(globalRow * constants.WIDTH_B + globalCol) * 2 + 1] = imagSum;
+    }
+}

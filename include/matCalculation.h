@@ -4,6 +4,7 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
+#include <complex>
 #include <utility>
 
 class Matrix {
@@ -49,4 +50,6 @@ public:
 	std::vector<std::vector<float>> sum(const std::vector<std::vector<float>>& matA, const float value);
 
 	std::vector<std::vector<float>> diff(const std::vector<std::vector<float>> &matA, const std::vector<std::vector<float>> &matB);
+
+	std::vector<std::vector<std::complex<float>>> complexMulti(const std::vector<std::vector<std::complex<float>>>& matA, const std::vector<std::vector<std::complex<float>>>& matB);
 };
