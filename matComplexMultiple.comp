@@ -26,26 +26,27 @@ layout(push_constant) uniform Constants {
     int HEIGHT_B;
 } constants;
 
-shared float AsubReal[16][16];
-shared float AsubImag[16][16];
-shared float BsubReal[16][16];
-shared float BsubImag[16][16];
+shared float AsubReal[gl_WorkGroupSize.y][gl_WorkGroupSize.x];
+shared float AsubImag[gl_WorkGroupSize.y][gl_WorkGroupSize.x];
+shared float BsubReal[gl_WorkGroupSize.y][gl_WorkGroupSize.x];
+shared float BsubImag[gl_WorkGroupSize.y][gl_WorkGroupSize.x];
 
 void main() {
     uint globalRow = gl_GlobalInvocationID.y;
     uint globalCol = gl_GlobalInvocationID.x;
+    uint groupSize = gl_WorkGroupSize.x;
 
     float realSum = 0.0f;
     float imagSum = 0.0f;
 
-    for (uint i = 0; i < (constants.WIDTH_A + 15) / 16; ++i) {
+    for (uint i = 0; i < (constants.WIDTH_A + groupSize - 1) / groupSize; ++i) {
         uint row = gl_LocalInvocationID.y;
         uint col = gl_LocalInvocationID.x;
         
-        uint AIndex = (globalRow * constants.WIDTH_A) + (i * 16 + col);
-        uint BIndex = (i * 16 + row) * constants.WIDTH_B + globalCol;
+        uint AIndex = (globalRow * constants.WIDTH_A) + (i * groupSize + col);
+        uint BIndex = (i * groupSize + row) * constants.WIDTH_B + globalCol;
 
-        if (globalRow < constants.HEIGHT_A && (i * 16 + col) < constants.WIDTH_A) {
+        if (globalRow < constants.HEIGHT_A && (i * groupSize + col) < constants.WIDTH_A) {
             AsubReal[row][col] = A[AIndex].real;
             AsubImag[row][col] = A[AIndex].imag;
         }
@@ -54,7 +55,7 @@ void main() {
             AsubImag[row][col] = 0.0f;
         }
 
-        if ((i * 16 + row) < constants.HEIGHT_B && globalCol < constants.WIDTH_B) {
+        if ((i * groupSize + row) < constants.HEIGHT_B && globalCol < constants.WIDTH_B) {
             BsubReal[row][col] = B[BIndex].real;
             BsubImag[row][col] = B[BIndex].imag;
         }
@@ -65,7 +66,7 @@ void main() {
 
         barrier();
 
-        for (uint j = 0; j < 16; ++j) {
+        for (uint j = 0; j < groupSize; ++j) {
             realSum += AsubReal[row][j] * BsubReal[j][col] - AsubImag[row][j] * BsubImag[j][col];
             imagSum += AsubReal[row][j] * BsubImag[j][col] + AsubImag[row][j] * BsubReal[j][col];
         }
