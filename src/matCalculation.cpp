@@ -178,7 +178,6 @@ void Matrix::initVulkan() {
 std::vector<std::vector<float>> Matrix::multi(const std::vector<std::vector<float>> &matA, const std::vector<std::vector<float>> &matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -188,7 +187,6 @@ std::vector<std::vector<float>> Matrix::multi(const std::vector<std::vector<floa
 
 	if (widthA != heightB) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	// バッファの作成.
@@ -434,7 +432,7 @@ std::vector<std::vector<float>> Matrix::multi(const std::vector<std::vector<floa
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -451,7 +449,6 @@ std::vector<std::vector<float>> Matrix::multi(const std::vector<std::vector<floa
 std::vector<std::vector<float>> Matrix::multiEach(const std::vector<std::vector<float>>& matA, const std::vector<std::vector<float>>& matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -461,7 +458,6 @@ std::vector<std::vector<float>> Matrix::multiEach(const std::vector<std::vector<
 
 	if ((widthA != widthB) || (heightA != heightB)) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	int width = widthA;
@@ -704,7 +700,7 @@ std::vector<std::vector<float>> Matrix::multiEach(const std::vector<std::vector<
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -721,7 +717,6 @@ std::vector<std::vector<float>> Matrix::multiEach(const std::vector<std::vector<
 std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>>& matA, const std::vector<std::vector<float>>& matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -731,7 +726,6 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 
 	if ((widthA != widthB) || (heightA != heightB)) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	int width = widthA;
@@ -974,7 +968,7 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -1195,7 +1189,7 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -1212,7 +1206,6 @@ std::vector<std::vector<float>> Matrix::sum(const std::vector<std::vector<float>
 std::vector<std::vector<float>> Matrix::diff(const std::vector<std::vector<float>>& matA, const std::vector<std::vector<float>>& matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -1222,7 +1215,6 @@ std::vector<std::vector<float>> Matrix::diff(const std::vector<std::vector<float
 
 	if ((widthA != widthB) || (heightA != heightB)) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	int width = widthA;
@@ -1465,7 +1457,7 @@ std::vector<std::vector<float>> Matrix::diff(const std::vector<std::vector<float
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -1482,7 +1474,6 @@ std::vector<std::vector<float>> Matrix::diff(const std::vector<std::vector<float
 std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::vector<std::vector<std::complex<float>>>&matA, const std::vector<std::vector<std::complex<float>>>&matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -1492,7 +1483,6 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::ve
 
 	if (widthA != heightB) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	// バッファの作成.
@@ -1746,7 +1736,7 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::ve
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
@@ -1766,7 +1756,6 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexMulti(const std::ve
 std::vector<std::vector<std::complex<float>>> Matrix::complexSum(const std::vector<std::vector<std::complex<float>>>& matA, const std::vector<std::vector<std::complex<float>>>& matB) {
 	if (matA.empty() || matB.empty()) {
 		throw std::runtime_error("matrix is empty.");
-		abort();
 	}
 
 	int heightA = (int)(matA.size());
@@ -1776,7 +1765,6 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexSum(const std::vect
 
 	if ((widthA != widthB) || (heightA != heightB)) {
 		throw std::runtime_error("don't match matrix size for calculation.");
-		abort();
 	}
 
 	int width = widthA;
@@ -2020,7 +2008,7 @@ std::vector<std::vector<std::complex<float>>> Matrix::complexSum(const std::vect
 
 	const std::vector< vk::Fence > fences{ m_fence.get() };
 	if (m_device->waitForFences(fences, true, 10000000000u) != vk::Result::eSuccess) {
-		abort();
+		throw std::runtime_error("can't complete calculation.");
 	}
 
 	memcpy(dataC.data(), data, bufferSizeOut);
